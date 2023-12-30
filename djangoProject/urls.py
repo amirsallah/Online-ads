@@ -21,6 +21,6 @@ from mangement_advertiser.views import show_ad, number_of_click, create_ad
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('show_ad/', show_ad),
-    path('number_of_click/', number_of_click),
+    path('number_of_click/<int:ad_id>/', number_of_click),
     path('create_ad/', create_ad),
 ]
