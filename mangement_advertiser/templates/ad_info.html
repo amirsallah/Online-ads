@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ad Statistics</title>
+</head>
+<body>
+    <h1>Ad Statistics</h1>
+
+    <h2>Clicks per Hour</h2>
+    <ul>
+        {% for entry in clicks_per_hour %}
+            <li>Hour: {{ entry.hour }}, Clicks: {{ entry.count }}</li>
+        {% empty %}
+            <li>No click data available.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Views per Hour</h2>
+    <ul>
+        {% for entry in views_per_hour %}
+            <li>Hour: {{ entry.hour }}, Views: {{ entry.count }}</li>
+        {% empty %}
+            <li>No view data available.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Click-Through Rates</h2>
+    <ul>
+        {% for entry in click_through_rates %}
+            <li>
+                Hour: {{ entry.hour }},
+                Clicks: {{ entry.click_count }},
+                Views: {{ entry.view_count }},
+                Rate: {{ entry.rate }}
+            </li>
+        {% empty %}
+            <li>No click-through rate data available.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Average Time Difference Between Views and Clicks</h2>
+    {% if average_time_difference %}
+        <p>Average Difference: {{ average_time_difference.average_diff }}</p>
+    {% else %}
+        <p>Average time difference data is not available.</p>
+    {% endif %}
+</body>
+</html>

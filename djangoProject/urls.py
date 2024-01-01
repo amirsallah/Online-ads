@@ -16,11 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from mangement_advertiser.views import show_ad, number_of_click, create_ad
+from mangement_advertiser.views import ShowAdView, CreateAdView, AdStatisticsView, AdClickView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('show_ad/', show_ad),
-    path('number_of_click/<int:ad_id>/', number_of_click),
-    path('create_ad/', create_ad),
+    path('show_ad/', ShowAdView.as_view()),
+    path('ad-statistics/<int:unique_id_ad>/', AdStatisticsView.as_view()),
+    path('create_ad/', CreateAdView.as_view()),
+    path('redirect/<int:pk>/', AdClickView.as_view())
 ]
