@@ -8,14 +8,14 @@
 </head>
 <body>
 <div class="container" dir="rtl">
-    {% for advertiser in advertisers %}
+    {% for advertiser, ads in approved_ads %}
         <div class="card mt-2 p-2">
             <h5 class="card-title">{{ advertiser.name }}</h5>
             <div class="card-body">
                 <div class="row">
-		    {% for ad in advertiser.ads.all %}
+		    {% for ad in ads %}
 		        <div class="card col-md-2 p-0 mx-2">
-		            <a href="/number_of_click/{{ ad.unique_id_ad }}/">
+		            <a href="/redirect/{{ ad.unique_id_ad }}/">
 		                <img src="{{ ad.img_url }}"
 		                     class="card-img-top">
 		                <div class="card-body">
