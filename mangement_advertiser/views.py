@@ -1,47 +1,103 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.db.models import Func, Count
+from django.db.models.functions import ExtractHour
+from django.shortcuts import get_object_or_404, redirect
+from django.views.generic import ListView, CreateView, TemplateView
 
 from .form import AdForm
-from .models import Ad, Advertiser
+from .models import Ad, Advertiser, View, Click
 
 
-def show_ad(request):
-    advertisers = Advertiser.objects.all()
-    for advert in advertisers:
-        advert.inc_views()
-        advert.save()
-        ads = advert.ads.all()
-        for ad in ads:
-            ad.inc_views()
-            ad.save()
-
-    context = {
-        'advertisers': advertisers
-    }
-    return render(request, 'ads.html', context)
+class RoundHour(Func):
+    function = 'HOUR'
+    template = "%(function)s(%(expressions)s)"
 
 
-def number_of_click(request, ad_id):
-    ad = get_object_or_404(Ad, unique_id_ad = ad_id)
-
-    ad.inc_clicks()
-    ad.save()
-
-    advertiser = ad.advertiser
-    advertiser.inc_clicks()
-    advertiser.save()
-
-    external_link = ad.link
-
-    return redirect(external_link)
+class GetClientIpMixin:
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
 
 
-def create_ad(request):
-    if request.method == 'POST':
-        form = AdForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('/show_ad/')
-    else:
-        form = AdForm()
+class ShowAdView(GetClientIpMixin, ListView):
+    model = Advertiser
+    template_name = 'ads.html'
+    context_object_name = 'advertisers'
 
-    return render(request, 'create_ad.html', {'form': form})
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['approved_ads'] = [(advert, advert.ads.filter(approve=True)) for advert in self.get_queryset()]
+        return context
+
+    def get_queryset(self):
+        advertisers = super().get_queryset()
+        for advert in advertisers:
+            ads = advert.ads.filter(approve=True)
+            for ad in ads:
+                View.objects.create(ad=ad, ip_address=self.get_client_ip(self.request))
+        return advertisers
+
+
+class AdClickView(GetClientIpMixin, CreateView):
+    model = Click
+    fields = []
+
+    def get(self, request, *args, **kwargs):
+        ad_id = self.kwargs.get('pk')
+        ad = get_object_or_404(Ad, pk=ad_id)
+
+        click = Click(ad=ad, ip_address=self.get_client_ip(request))
+        click.save()
+
+        return redirect(ad.link)
+
+
+class AdStatisticsView(TemplateView):
+    template_name = 'ad_info.html'
+
+    def get_context_data(self, unique_id_ad, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        ad = Ad.objects.get(unique_id_ad=unique_id_ad)
+
+        clicks_per_hour = Click.objects.filter(ad=ad).annotate(
+            hour=ExtractHour('click_time')
+        ).values('hour').annotate(count=Count('id')).order_by('hour')
+
+        views_per_hour = View.objects.filter(ad=ad).annotate(
+            hour=ExtractHour('view_time')
+        ).values('hour').annotate(count=Count('id')).order_by('hour')
+
+        click_data = {entry['hour']: entry['count'] for entry in clicks_per_hour}
+        view_data = {entry['hour']: entry['count'] for entry in views_per_hour}
+        click_through_rates = []
+        for hour, click_count in click_data.items():
+            view_count = view_data.get(hour, 0)
+            rate = click_count / view_count if view_count else 0
+            click_through_rates.append({
+                'hour': hour,
+                'rate': rate,
+                'click_count': click_count,
+                'view_count': view_count,
+            })
+
+        average_time_difference = None
+
+        context.update({
+            'clicks_per_hour': clicks_per_hour,
+            'views_per_hour': views_per_hour,
+            'click_through_rates': click_through_rates,
+            'average_time_difference': average_time_difference,
+        })
+
+        return context
+
+
+class CreateAdView(CreateView):
+    model = Ad
+    form_class = AdForm
+    template_name = 'create_ad.html'
+    success_url = '/show_ad/'
