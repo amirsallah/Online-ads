@@ -1,9 +1,13 @@
 from django.db.models import Func, Count
 from django.db.models.functions import ExtractHour
 from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import ListView, CreateView, TemplateView
+from django.views.generic import CreateView
+from rest_framework import status
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .form import AdForm
 from .serializers import *
 
 
@@ -22,13 +26,11 @@ class GetClientIpMixin:
         return ip
 
 
-class ShowAdView(GetClientIpMixin, ListView):
+class ShowAdView(GetClientIpMixin, APIView):
     model = Advertiser
-    template_name = 'ads.html'
     context_object_name = 'advertisers'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    def get(self, request, **kwargs):
         advertisers = self.get_queryset()
         ads = []
 
@@ -37,16 +39,23 @@ class ShowAdView(GetClientIpMixin, ListView):
             ads.extend(approved_ads)
 
         ad_serializer = AdSerializer(ads, many=True)
-        advertiser_serializer = AdvertiserSerializer(advertisers, many=True)
 
-        context['advertisers'] = advertiser_serializer.data
-        context['approved_ads'] = [(advert, advert.ads.filter(approve=True)) for advert in self.get_queryset()]
-        context['ads'] = ad_serializer
+        serialized_ads = ad_serializer.data
 
-        return context
+        categorized_ads = {}
+        for ad in serialized_ads:
+            advertiser_id = ad['advertiser']['unique_id']
+            if advertiser_id not in categorized_ads:
+                categorized_ads[advertiser_id] = {
+                    'advertiser': ad['advertiser'],
+                    'ads': []
+                }
+            categorized_ads[advertiser_id]['ads'].append(ad)
+
+        return Response(categorized_ads)
 
     def get_queryset(self):
-        advertisers = super().get_queryset()
+        advertisers = Advertiser.objects.all()
         for advert in advertisers:
             ads = advert.ads.filter(approve=True)
             for ad in ads:
@@ -69,12 +78,9 @@ class AdClickView(GetClientIpMixin, CreateView):
         return redirect(ad.link)
 
 
-class AdStatisticsView(TemplateView):
-    template_name = 'ad_info.html'
+class AdStatisticsView(APIView):
 
-    def get_context_data(self, unique_id_ad, **kwargs):
-        context = super().get_context_data(**kwargs)
-
+    def get(self, request, unique_id_ad, **kwargs):
         ad = Ad.objects.get(unique_id_ad=unique_id_ad)
 
         clicks_per_hour = Click.objects.filter(ad=ad).annotate(
@@ -105,19 +111,43 @@ class AdStatisticsView(TemplateView):
                             zip(view_times, click_times)]
         average_time_difference = sum(time_differences) / len(time_differences) if time_differences else None
 
-        serializer = AdStatisticsSerializer({
+        serializer = AdStatisticsSerializer(data={
             'clicks_per_hour': [{'hour': entry['hour'], 'count': entry['count']} for entry in clicks_per_hour],
             'views_per_hour': [{'hour': entry['hour'], 'count': entry['count']} for entry in views_per_hour],
             'click_through_rates': click_through_rates,
             'average_time_difference': average_time_difference,
         })
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data)
 
-        context = serializer.data
-        return context
+
+class CreateAdView(APIView):
+
+    def post(self, request, *args, **kwargs):
+        serializer = AdSerializer(data=request.body)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
 
 
-class CreateAdView(CreateView):
-    model = Ad
-    form_class = AdForm
-    template_name = 'create_ad.html'
-    success_url = '/show_ad/'
+# class ExampleView(APIView):
+#     authentication_classes = [SessionAuthentication, BasicAuthentication]
+#     permission_classes = [IsAuthenticated]
+#
+#     def get(self, request):
+#         content = {
+#             'user': str(request.user),  # `django.contrib.auth.User` instance.
+#             'auth': str(request.auth),  # None
+#         }
+#         return Response(content)
+#
+#     class RegisterView(generics.CreateAPIView):
+#         queryset = CustomUser.objects.all()
+#         serializer_class = CustomUserSerializer
+#
+#     class ProfileView(APIView):
+#         permission_classes = [IsAuthenticated]
+#
+#         def get(self, request):
+#             serializer = CustomUserSerializer(request.user)
+#             return Response(serializer.data)

@@ -23,5 +23,5 @@ urlpatterns = [
     path('show_ad/', ShowAdView.as_view()),
     path('ad-statistics/<int:unique_id_ad>/', AdStatisticsView.as_view()),
     path('create_ad/', CreateAdView.as_view(), name='create_ad'),
-    path('redirect/<int:pk>/', AdClickView.as_view(), name='ad_click')
+    path('redirect/<int:pk>/', AdClickView.as_view(), name='ad_click'),
 ]
