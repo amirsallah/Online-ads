@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView, CreateView, TemplateView
 
 from .form import AdForm
-from .models import Ad, Advertiser, View, Click
+from .serializers import *
 
 
 class RoundHour(Func):
@@ -29,7 +29,20 @@ class ShowAdView(GetClientIpMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        advertisers = self.get_queryset()
+        ads = []
+
+        for advert in advertisers:
+            approved_ads = advert.ads.filter(approve=True)
+            ads.extend(approved_ads)
+
+        ad_serializer = AdSerializer(ads, many=True)
+        advertiser_serializer = AdvertiserSerializer(advertisers, many=True)
+
+        context['advertisers'] = advertiser_serializer.data
         context['approved_ads'] = [(advert, advert.ads.filter(approve=True)) for advert in self.get_queryset()]
+        context['ads'] = ad_serializer
+
         return context
 
     def get_queryset(self):
@@ -44,6 +57,7 @@ class ShowAdView(GetClientIpMixin, ListView):
 class AdClickView(GetClientIpMixin, CreateView):
     model = Click
     fields = []
+    serializer_class = ClickSerializer
 
     def get(self, request, *args, **kwargs):
         ad_id = self.kwargs.get('pk')
@@ -84,15 +98,21 @@ class AdStatisticsView(TemplateView):
                 'view_count': view_count,
             })
 
-        average_time_difference = None
+        click_times = Click.objects.filter(ad=ad).values_list('click_time', flat=True)
+        view_times = View.objects.filter(ad=ad).values_list('view_time', flat=True)
 
-        context.update({
-            'clicks_per_hour': clicks_per_hour,
-            'views_per_hour': views_per_hour,
+        time_differences = [(view_time - click_time).total_seconds() for view_time, click_time in
+                            zip(view_times, click_times)]
+        average_time_difference = sum(time_differences) / len(time_differences) if time_differences else None
+
+        serializer = AdStatisticsSerializer({
+            'clicks_per_hour': [{'hour': entry['hour'], 'count': entry['count']} for entry in clicks_per_hour],
+            'views_per_hour': [{'hour': entry['hour'], 'count': entry['count']} for entry in views_per_hour],
             'click_through_rates': click_through_rates,
             'average_time_difference': average_time_difference,
         })
 
+        context = serializer.data
         return context
 
 
