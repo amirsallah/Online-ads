@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Ad, Advertiser, View, Click
+from .models import Ad, Advertiser, View, Click, AdUser
 
 
 class AdAdmin(admin.ModelAdmin):
@@ -11,5 +11,6 @@ class AdAdmin(admin.ModelAdmin):
 
 admin.site.register(View)
 admin.site.register(Click)
+admin.site.register(AdUser)
 admin.site.register(Advertiser)
 admin.site.register(Ad, AdAdmin)

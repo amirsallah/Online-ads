@@ -29,6 +29,13 @@ class ViewSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdUser
+        fields = ('id', 'username', 'email', 'password')
+        extra_kwargs = {'password': {'write_only': True}}
+
+
 class AdStatisticsSerializer(serializers.Serializer):
     clicks_per_hour = serializers.ListField(child=serializers.DictField())
     views_per_hour = serializers.ListField(child=serializers.DictField())

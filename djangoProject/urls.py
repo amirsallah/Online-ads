@@ -16,7 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from mangement_advertiser.views import ShowAdView, CreateAdView, AdStatisticsView, AdClickView
+from mangement_advertiser.views import (ShowAdView, CreateAdView, AdStatisticsView, AdClickView, RegisterUserView,
+                                        ProfileUserView)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,4 +25,6 @@ urlpatterns = [
     path('ad-statistics/<int:unique_id_ad>/', AdStatisticsView.as_view()),
     path('create_ad/', CreateAdView.as_view(), name='create_ad'),
     path('redirect/<int:pk>/', AdClickView.as_view(), name='ad_click'),
+    path('register/', RegisterUserView.as_view(), name='register'),
+    path('profile/', ProfileUserView.as_view(), name='profile')
 ]

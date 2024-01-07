@@ -2,8 +2,7 @@ from django.db.models import Func, Count
 from django.db.models.functions import ExtractHour
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import CreateView
-from rest_framework import status
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework import status, generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -27,6 +26,7 @@ class GetClientIpMixin:
 
 
 class ShowAdView(GetClientIpMixin, APIView):
+    permission_classes = [IsAuthenticated]
     model = Advertiser
     context_object_name = 'advertisers'
 
@@ -64,6 +64,8 @@ class ShowAdView(GetClientIpMixin, APIView):
 
 
 class AdClickView(GetClientIpMixin, CreateView):
+    permission_classes = [IsAuthenticated]
+
     model = Click
     fields = []
     serializer_class = ClickSerializer
@@ -79,6 +81,7 @@ class AdClickView(GetClientIpMixin, CreateView):
 
 
 class AdStatisticsView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, unique_id_ad, **kwargs):
         ad = Ad.objects.get(unique_id_ad=unique_id_ad)
@@ -122,6 +125,7 @@ class AdStatisticsView(APIView):
 
 
 class CreateAdView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         serializer = AdSerializer(data=request.body)
@@ -130,24 +134,14 @@ class CreateAdView(APIView):
         return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
 
 
-# class ExampleView(APIView):
-#     authentication_classes = [SessionAuthentication, BasicAuthentication]
-#     permission_classes = [IsAuthenticated]
-#
-#     def get(self, request):
-#         content = {
-#             'user': str(request.user),  # `django.contrib.auth.User` instance.
-#             'auth': str(request.auth),  # None
-#         }
-#         return Response(content)
-#
-#     class RegisterView(generics.CreateAPIView):
-#         queryset = CustomUser.objects.all()
-#         serializer_class = CustomUserSerializer
-#
-#     class ProfileView(APIView):
-#         permission_classes = [IsAuthenticated]
-#
-#         def get(self, request):
-#             serializer = CustomUserSerializer(request.user)
-#             return Response(serializer.data)
+class RegisterUserView(generics.CreateAPIView):
+    queryset = AdUser.objects.all()
+    serializer_class = CustomUserSerializer
+
+
+class ProfileUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = CustomUserSerializer(request.user)
+        return Response(serializer.data)

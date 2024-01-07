@@ -1,5 +1,33 @@
+from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 from django.utils import timezone
+from pip._internal.utils._jaraco_text import _
+
+
+class AdUser(AbstractUser):
+    id = models.IntegerField(primary_key=True)
+    name = models.CharField(max_length=30)
+    email = models.EmailField()
+    password = models.TextField()
+
+    groups = models.ManyToManyField(
+        Group,
+        verbose_name=_('groups'),
+        blank=True,
+        help_text=_(
+            'The groups this user belongs to. A user will get all permissions granted to each of their groups.'),
+        related_name='custom_user_groups',
+        related_query_name='user',
+    )
+
+    user_permissions = models.ManyToManyField(
+        Permission,
+        verbose_name=_('user permissions'),
+        blank=True,
+        help_text=_('Specific permissions for this user.'),
+        related_name='custom_user_permissions',
+        related_query_name='user',
+    )
 
 
 class Ad(models.Model):
