@@ -17,7 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from mangement_advertiser.views import (ShowAdView, CreateAdView, AdStatisticsView, AdClickView, RegisterUserView,
-                                        ProfileUserView)
+                                        ProfileUserView, AdvertiserListCreateView, AdvertiserDetailView,
+                                        AdListCreateView, AdDetailView,
+                                        ClickListCreateView, ClickDetailView,
+                                        ViewListCreateView, ViewDetailView)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,5 +29,13 @@ urlpatterns = [
     path('create_ad/', CreateAdView.as_view(), name='create_ad'),
     path('redirect/<int:pk>/', AdClickView.as_view(), name='ad_click'),
     path('register/', RegisterUserView.as_view(), name='register'),
-    path('profile/', ProfileUserView.as_view(), name='profile')
+    path('profile/', ProfileUserView.as_view(), name='profile'),
+    path('advertisers/', AdvertiserListCreateView.as_view(), name='advertiser-list-create'),
+    path('advertisers/<int:pk>/', AdvertiserDetailView.as_view(), name='advertiser-detail'),
+    path('ads/', AdListCreateView.as_view(), name='ad-list-create'),
+    path('ads/<int:pk>/', AdDetailView.as_view(), name='ad-detail'),
+    path('clicks/', ClickListCreateView.as_view(), name='click-list-create'),
+    path('clicks/<int:pk>/', ClickDetailView.as_view(), name='click-detail'),
+    path('views/', ViewListCreateView.as_view(), name='view-list-create'),
+    path('views/<int:pk>/', ViewDetailView.as_view(), name='view-detail'),
 ]

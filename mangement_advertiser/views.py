@@ -2,7 +2,8 @@ from django.db.models import Func, Count
 from django.db.models.functions import ExtractHour
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import CreateView
-from rest_framework import status, generics
+from rest_framework import generics
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -145,3 +146,47 @@ class ProfileUserView(APIView):
     def get(self, request):
         serializer = CustomUserSerializer(request.user)
         return Response(serializer.data)
+
+
+# ____________________________________________________________________________________________________
+# generic view
+
+
+class AdvertiserListCreateView(generics.ListCreateAPIView):
+    queryset = Advertiser.objects.all()
+    serializer_class = AdvertiserSerializer
+
+
+class AdvertiserDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Advertiser.objects.all()
+    serializer_class = AdvertiserSerializer
+
+
+class AdListCreateView(generics.ListCreateAPIView):
+    queryset = Ad.objects.all()
+    serializer_class = AdSerializer
+
+
+class AdDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Ad.objects.all()
+    serializer_class = AdSerializer
+
+
+class ClickListCreateView(generics.ListCreateAPIView):
+    queryset = Click.objects.all()
+    serializer_class = ClickSerializer
+
+
+class ClickDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Click.objects.all()
+    serializer_class = ClickSerializer
+
+
+class ViewListCreateView(generics.ListCreateAPIView):
+    queryset = View.objects.all()
+    serializer_class = ViewSerializer
+
+
+class ViewDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = View.objects.all()
+    serializer_class = ViewSerializer
