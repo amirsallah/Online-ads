@@ -62,3 +62,23 @@ class Advertiser(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class AdHourlyStatistics(models.Model):
+    ad = models.ForeignKey(Ad, on_delete=models.CASCADE)
+    clicks = models.IntegerField()
+    views = models.IntegerField()
+    hour = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.ad} - Clicks: {self.clicks}, Views: {self.views}, Hour: {self.hour}"
+
+
+class AdDailyStatistics(models.Model):
+    ad = models.ForeignKey(Ad, on_delete=models.CASCADE)
+    clicks = models.IntegerField()
+    views = models.IntegerField()
+    day = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.ad} - Clicks: {self.clicks}, Views: {self.views}, Day: {self.day}"
