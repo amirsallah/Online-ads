@@ -10,7 +10,27 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
+from datetime import timedelta
 from pathlib import Path
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+CELERY_BEAT_SCHEDULE = {
+    'calculate_hourly_statistics': {
+        'task': 'mangement_advertiser.tasks.calculate_hourly_statistics',
+        'schedule': timedelta(hours=1),
+
+    },
+    'calculate_daily_statistics': {
+        'task': 'mangement_advertiser.tasks.calculate_daily_statistics',
+        'schedule': timedelta(days=1),
+    },
+}
+
+CELERYD_HIJACK_ROOT_LOGGER = False
+CELERYD_LOG_COLOR = True
+CELERYD_LOG_LEVEL = 'INFO'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -116,7 +136,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Tehran'
 
 USE_I18N = True
 
