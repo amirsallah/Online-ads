@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from mangement_advertiser.models import *
@@ -11,6 +12,13 @@ class AdvertiserSerializer(serializers.ModelSerializer):
 
 class AdSerializer(serializers.ModelSerializer):
     advertiser = AdvertiserSerializer()
+
+    class Meta:
+        model = Ad
+        fields = '__all__'
+
+
+class CreateAdSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ad
@@ -31,7 +39,7 @@ class ViewSerializer(serializers.ModelSerializer):
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AdUser
+        model = User
         fields = ('id', 'username', 'email', 'password')
         extra_kwargs = {'password': {'write_only': True}}
 

@@ -3,8 +3,7 @@ from django.db.models.functions import ExtractHour
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import CreateView
 from rest_framework import generics
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -28,20 +27,16 @@ class GetClientIpMixin:
 
 class ShowAdView(GetClientIpMixin, APIView):
     permission_classes = [IsAuthenticated]
-    model = Advertiser
-    context_object_name = 'advertisers'
 
     def get(self, request, **kwargs):
-        advertisers = self.get_queryset()
-        ads = []
+        ads = self.get_queryset()
 
-        for advert in advertisers:
-            approved_ads = advert.ads.filter(approve=True)
-            ads.extend(approved_ads)
+        for ad in ads:
+            advertiser = ad.advertiser
+            advertiser.views += 1
+            advertiser.save()
 
-        ad_serializer = AdSerializer(ads, many=True)
-
-        serialized_ads = ad_serializer.data
+        serialized_ads = AdSerializer(ads, many=True).data
 
         categorized_ads = {}
         for ad in serialized_ads:
@@ -57,11 +52,13 @@ class ShowAdView(GetClientIpMixin, APIView):
 
     def get_queryset(self):
         advertisers = Advertiser.objects.all()
+        ads = []
         for advert in advertisers:
-            ads = advert.ads.filter(approve=True)
-            for ad in ads:
+            approved_ads = advert.ads.filter(approve=True)
+            ads.extend(approved_ads)
+            for ad in approved_ads:
                 View.objects.create(ad=ad, ip_address=self.get_client_ip(self.request))
-        return advertisers
+        return ads
 
 
 class AdClickView(GetClientIpMixin, CreateView):
@@ -76,6 +73,9 @@ class AdClickView(GetClientIpMixin, CreateView):
         ad = get_object_or_404(Ad, pk=ad_id)
 
         click = Click(ad=ad, ip_address=self.get_client_ip(request))
+        advertiser = click.ad.advertiser
+        advertiser.clicks += 1
+        advertiser.save()
         click.save()
 
         return redirect(ad.link)
@@ -125,18 +125,14 @@ class AdStatisticsView(APIView):
         return Response(serializer.validated_data)
 
 
-class CreateAdView(APIView):
+class CreateAdView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        serializer = AdSerializer(data=request.body)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
+    serializer_class = CreateAdSerializer
 
 
 class RegisterUserView(generics.CreateAPIView):
-    queryset = AdUser.objects.all()
+    permission_classes = [AllowAny]
+    queryset = User.objects.all()
     serializer_class = CustomUserSerializer
 
 
