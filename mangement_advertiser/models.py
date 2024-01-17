@@ -11,14 +11,13 @@ class Ad(models.Model):
     advertiser = models.ForeignKey('Advertiser', on_delete=models.CASCADE, related_name='ads')
     approve = models.BooleanField(default=False)
 
-    # cost_type_choices = [
-    #     ('CPM', 'Cost Per Mille (CPM)'),
-    #     ('CPC', 'Cost Per Click (CPC)'),
-    # ]
-    # cost_type = models.CharField(max_length=3, choices=cost_type_choices, default='CPM')
-    # cost_per_mille = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    # cost_per_click = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    # remaining_budget = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    cost_type_choices = [
+        ('CPM', 'Cost Per view (CPM)'),
+        ('CPC', 'Cost Per Click (CPC)'),
+    ]
+    cost_type = models.CharField(max_length=3, choices=cost_type_choices, default='CPM')
+    cost_per_view = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    cost_per_click = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
     def __str__(self):
         return self.title
@@ -41,6 +40,7 @@ class Advertiser(models.Model):
     unique_id = models.IntegerField(primary_key=True)
     clicks = models.IntegerField(default=0)
     views = models.IntegerField(default=0)
+    budget = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
     def __str__(self):
         return self.name
