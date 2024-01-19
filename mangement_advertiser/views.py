@@ -2,10 +2,13 @@ from django.db.models import Func, Count
 from django.db.models.functions import ExtractHour
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import CreateView
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated,AllowAny
+from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from kafka import KafkaProducer
+from django.views import View
+import json
 
 from .serializers import *
 
@@ -58,6 +61,18 @@ class ShowAdView(GetClientIpMixin, APIView):
             ads.extend(approved_ads)
             for ad in approved_ads:
                 View.objects.create(ad=ad, ip_address=self.get_client_ip(self.request))
+
+                # kafka_producer = KafkaProducer(bootstrap_servers='127.0.0.1:9092')
+                # topic_name = 'ad_interactions'
+                #
+                # ad_interaction_data = {
+                #     'ad_id': ad.id,
+                #     'interaction_type': 'view',
+                #     'advertiser_id': ad.advertiser.unique_id,
+                # }
+                #
+                # kafka_producer.send(topic_name, json.dumps(ad_interaction_data).encode('utf-8'))
+
         return ads
 
 
@@ -77,6 +92,17 @@ class AdClickView(GetClientIpMixin, CreateView):
         advertiser.clicks += 1
         advertiser.save()
         click.save()
+
+        # kafka_producer = KafkaProducer(bootstrap_servers='127.0.0.1:9092')
+        # topic_name = 'ad_interactions'
+        #
+        # ad_interaction_data = {
+        #     'ad_id': ad.id,
+        #     'interaction_type': 'click',
+        #     'advertiser_id': ad.advertiser.unique_id,
+        # }
+        #
+        # kafka_producer.send(topic_name, json.dumps(ad_interaction_data).encode('utf-8'))
 
         return redirect(ad.link)
 
